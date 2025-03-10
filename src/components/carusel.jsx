@@ -1,52 +1,96 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 
-const Carousel = () => {
-  const slides = [
-    "https://images.uzum.uz/cv3eg7ei4n36ls3t0770/main_page_banner.jpg",
-    "https://images.uzum.uz/cug7q9tht56sc95cis1g/main_page_banner.jpg",
-    "https://images.uzum.uz/cv4o265pb7f9qcng1frg/main_page_banner.jpg",
-    "https://images.uzum.uz/cuuoplei4n36ls3rla6g/main_page_banner.jpg",
-    "https://images.uzum.uz/cuuljv3vgbkm5ehgnhcg/main_page_banner.jpg",
-  ];
+const Carousel = ({ products }) => {
+  const navigate = useNavigate(); // Navigatsiya funksiyasi
+
+  // Rasmlar va mahsulot ma'lumotlarini olish
+  const slides = products.flatMap(product =>
+    product.images.map(image => ({
+      id: product.id,  
+      image, 
+      price: product.price
+    }))
+  );
+console.log(slides);
 
   const [current, setCurrent] = useState(0);
+  const carouselRef = useRef(null);
 
   useEffect(() => {
     const interval = setInterval(() => {
-      setCurrent((prev) => (prev + 1) % slides.length);
-    }, 3500);
+      nextSlide();
+    }, 3000);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [slides.length]);
+
+  const nextSlide = () => {
+    if (carouselRef.current) {
+      if (current >= slides.length - 3) {
+        // Oxiriga yetganda boshiga qaytish
+        carouselRef.current.scrollTo({ left: 0, behavior: "smooth" });
+        setCurrent(0);
+      } else {
+        setCurrent((prev) => prev + 3);
+        carouselRef.current.scrollBy({ left: 250, behavior: "smooth" });
+      }
+    }
+  };
+
+  const prevSlide = () => {
+    if (carouselRef.current) {
+      if (current <= 0) {
+        // Boshlanishga yetganda oxiriga qaytish
+        carouselRef.current.scrollTo({ left: carouselRef.current.scrollWidth, behavior: "smooth" });
+        setCurrent(slides.length - 3);
+      } else {
+        setCurrent((prev) => prev - 3);
+        carouselRef.current.scrollBy({ left: -250, behavior: "smooth" });
+      }
+    }
+  };
 
   return (
-    <div className="carousel w-full rounded-xl">
-      {slides.map((slide, index) => (
-        <div
-          key={index}
-          className={`carousel-item relative w-full ${
-            index === current ? "block" : "hidden"
-          }`}
-        >
-          <img src={slide} className="w-full" alt={`Slide ${index + 1}`} />
-          <div className="absolute left-5 right-5 top-1/2 flex -translate-y-1/2 transform justify-between">
-            <button
-              onClick={() =>
-                setCurrent((prev) => (prev - 1 + slides.length) % slides.length)
-              }
-              className="btn btn-circle"
-            >
-              ❮
-            </button>
-            <button
-              onClick={() => setCurrent((prev) => (prev + 1) % slides.length)}
-              className="btn btn-circle"
-            >
-              ❯
-            </button>
-          </div>
-        </div>
-      ))}
+    <div className="w-full shadow-2xl overflow-hidden b pb-4 mb-4  relative">
+      {/* Scrollable rasm qatori */}
+      <div
+        ref={carouselRef}
+        className="flex  overflow-x-auto scroll-smooth scrollbar-hide"
+        style={{ scrollSnapType: "x mandatory" }}
+      >
+        {slides.map((slide, index) => (
+      <div
+      key={index}
+      className="relative shadow-2xl flex-shrink-0 mx-2 rounded-lg cursor-pointer"
+      style={{ width: "200px", scrollSnapAlign: "start" }}
+      onClick={() => navigate(`/fullproduct/${slide.id}`)}
+    >
+      <img
+        src={slide.image}
+        alt={`Slide ${index + 1}`}
+        className="h-40 w-full rounded-lg"
+      />
+      <p className="absolute top-0 left-0 p-1  bg-yellow-400 text-[60%] font-bold text-center text-black py-2 rounded-full">
+        {slide.price} so'm
+      </p>
+    </div>
+    
+        ))}
+      </div>
+
+      <button
+        className="absolute left-2 top-1/2 -translate-y-1/2 bg-white p-2 rounded-full shadow-md"
+        onClick={prevSlide}
+      >
+        ❮
+      </button>
+      <button
+        className="absolute right-2 top-1/2 -translate-y-1/2 bg-white p-2 rounded-full shadow-md"
+        onClick={nextSlide}
+      >
+        ❯
+      </button>
     </div>
   );
 };
